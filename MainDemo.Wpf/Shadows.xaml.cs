@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace MaterialDesignThemes.Wpf
+namespace MaterialDesignColors.WpfExample
 {
     /// <summary>
-    /// Interaction logic for ProgressLoopDev.xaml
+    /// Interaction logic for Shadows.xaml
     /// </summary>
-    public partial class ProgressLoopDev : UserControl
+    public partial class Shadows : UserControl
     {
-        public ProgressLoopDev()
+        public Shadows()
         {
             InitializeComponent();
         }

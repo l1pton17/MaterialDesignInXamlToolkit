@@ -34,8 +34,9 @@ namespace MaterialDesignThemes.Wpf
 
         private static void MouseButtonEventHandler(object sender, MouseButtonEventArgs e)
         {
-            foreach (var loadedInstance in LoadedInstances)
+            foreach (var loadedInstance in PressedInstances)
                 VisualStateManager.GoToState(loadedInstance, TemplateStateNormal, true);
+            PressedInstances.Clear();
         }
 
         private static void MouseMouveEventHandler(object sender, MouseEventArgs e)
@@ -49,7 +50,7 @@ namespace MaterialDesignThemes.Wpf
                     || relativePosition.Y >= ripple.ActualHeight)
 
                 {
-                    VisualStateManager.GoToState(ripple, TemplateStateMouseOut, true);
+                    VisualStateManager.GoToState(ripple, TemplateStateMouseOut, false);
                     PressedInstances.Remove(ripple);
                 }
             }

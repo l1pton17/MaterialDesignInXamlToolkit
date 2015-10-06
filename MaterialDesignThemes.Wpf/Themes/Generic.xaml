@@ -65,7 +65,7 @@
                                                              Duration="0:0:0.3" To="{StaticResource EllipseOpacity}"/>
                                             <DoubleAnimation Storyboard.TargetProperty="Opacity" Storyboard.TargetName="ClickEllipse"
                                                              EasingFunction="{StaticResource EasingFunction}"
-                                                             BeginTime="0:0:0.3" Duration="0:0:0.4" To="0"/>
+                                                             BeginTime="0:0:0.3" Duration="0:0:1.4" To="0"/>
                                             <DoubleAnimation Storyboard.TargetProperty="ScaleX" Storyboard.TargetName="ScaleTransform"
                                                              EasingFunction="{StaticResource EasingFunction}"
                                                              Duration="0:0:0.7" To="1"/>

@@ -39,7 +39,7 @@
                 <ControlTemplate TargetType="{x:Type local:Ripple}">
                     <ControlTemplate.Resources>
                         <QuadraticEase x:Key="EasingFunction" EasingMode="EaseOut"/>
-                        <sys:Double x:Key="EllipseOpacity">0.45</sys:Double>
+                        <sys:Double x:Key="EllipseOpacity">0.3</sys:Double>
                     </ControlTemplate.Resources>
                     <Grid Background="Transparent">
                         <VisualStateManager.VisualStateGroups>

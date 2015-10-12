@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -32,8 +31,7 @@ namespace MaterialDesignThemes.Wpf
 
         private Popup _popup;
         private Window _window;
-        private DialogClosingEventHandler _attachedDialogClosingEventHandler;
-        private bool _removeContentOnClose;
+        private DialogClosingEventHandler _attachedDialogClosingEventHandler;        
         private object _closeDialogExecutionParameter = null;
 
         static DialogHost()
@@ -85,7 +83,6 @@ namespace MaterialDesignThemes.Wpf
 
             await task;
 
-            targets[0].DialogContent = null;
             targets[0]._asyncShowClosingEventHandler = null;
 
             return targets[0]._closeDialogExecutionParameter;
@@ -95,7 +92,6 @@ namespace MaterialDesignThemes.Wpf
         {
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
-            SizeChanged += (sender, args) => TriggerPopupReposition();            
 
             CommandBindings.Add(new CommandBinding(CloseDialogCommand, CloseDialogHandler));
             CommandBindings.Add(new CommandBinding(OpenDialogCommand, OpenDialogHandler));
@@ -126,11 +122,6 @@ namespace MaterialDesignThemes.Wpf
             {
                 dialogHost._asyncShowWaitHandle.Set();
                 dialogHost._attachedDialogClosingEventHandler = null;
-                if (dialogHost._removeContentOnClose)
-                {
-                    dialogHost.DialogContent = null;
-                    dialogHost._removeContentOnClose = false;
-                }
                 return;
             }
 
@@ -209,22 +200,22 @@ namespace MaterialDesignThemes.Wpf
             add { AddHandler(DialogClosingEvent, value); }
             remove { RemoveHandler(DialogClosingEvent, value); }
         }
-
+        
         /// <summary>
         /// Attached property which can be used on the <see cref="Button"/> which instigated the <see cref="OpenDialogCommand"/> to process the closing event.
         /// </summary>
-        public static readonly DependencyProperty DialogClosingProperty = DependencyProperty.RegisterAttached(
-            "DialogClosing", typeof (DialogClosingEventHandler), typeof (DialogHost), new PropertyMetadata(default(DialogClosingEventHandler)));
+        public static readonly DependencyProperty DialogClosingAttachedProperty = DependencyProperty.RegisterAttached(
+            "DialogClosingAttached", typeof (DialogClosingEventHandler), typeof (DialogHost), new PropertyMetadata(default(DialogClosingEventHandler)));
 
-        public static void SetDialogClosing(DependencyObject element, DialogClosingEventHandler value)
+        public static void SetDialogClosingAttached(DependencyObject element, DialogClosingEventHandler value)
         {
-            element.SetValue(DialogClosingProperty, value);
+            element.SetValue(DialogClosingAttachedProperty, value);
         }
 
-        public static DialogClosingEventHandler GetDialogClosing(DependencyObject element)
+        public static DialogClosingEventHandler GetDialogClosingAttached(DependencyObject element)
         {
-            return (DialogClosingEventHandler) element.GetValue(DialogClosingProperty);
-        }
+            return (DialogClosingEventHandler) element.GetValue(DialogClosingAttachedProperty);
+        }        
 
         public static readonly DependencyProperty DialogClosingCallbackProperty = DependencyProperty.Register(
             "DialogClosingCallback", typeof (DialogClosingEventHandler), typeof (DialogHost), new PropertyMetadata(default(DialogClosingEventHandler)));
@@ -239,9 +230,7 @@ namespace MaterialDesignThemes.Wpf
         }
 
         protected void OnDialogClosing(DialogClosingEventArgs eventArgs)
-        {
-            eventArgs.RoutedEvent = DialogClosingEvent; 
-            eventArgs.Source = eventArgs.Source ?? this;
+        {            
             RaiseEvent(eventArgs);
         }
 
@@ -252,14 +241,13 @@ namespace MaterialDesignThemes.Wpf
             var dependencyObject = executedRoutedEventArgs.OriginalSource as DependencyObject;
             if (dependencyObject != null)
             {
-                _attachedDialogClosingEventHandler = GetDialogClosing(dependencyObject);
+                _attachedDialogClosingEventHandler = GetDialogClosingAttached(dependencyObject);
             }
 
             if (executedRoutedEventArgs.Parameter != null)
             {
                 AssertTargetableContent();
                 DialogContent = executedRoutedEventArgs.Parameter;
-                _removeContentOnClose = true;
             }
 
             SetCurrentValue(IsOpenProperty, true);
@@ -270,26 +258,26 @@ namespace MaterialDesignThemes.Wpf
         private void AssertTargetableContent()
         {
             var existindBinding = BindingOperations.GetBindingExpression(this, DialogContentProperty);
-            if (existindBinding != null || DialogContent != null)
+            if (existindBinding != null)
                 throw new InvalidOperationException(
-                    "Content cannot be passed to a dialog via the OpenDialog of DialogContent is already set, or has a binding.");
+                    "Content cannot be passed to a dialog via the OpenDialog if DialogContent already has a binding.");
         }
 
         private void CloseDialogHandler(object sender, ExecutedRoutedEventArgs executedRoutedEventArgs)
         {
             if (executedRoutedEventArgs.Handled) return;
 
-            var dialogClosingEventArgs = new DialogClosingEventArgs(executedRoutedEventArgs.Parameter, DialogContent);
+            var dialogClosingEventArgs = new DialogClosingEventArgs(executedRoutedEventArgs.Parameter, DialogContent, DialogClosingEvent);
 
             //multiple ways of calling back that the dialog is closing:
+            // * routed event
             // * the attached property (which should be applied to the button which opened the dialog
             // * straight forward dependency property 
             // * handler provided to the async show method
-            // * routed event
+            OnDialogClosing(dialogClosingEventArgs);
             _attachedDialogClosingEventHandler?.Invoke(this, dialogClosingEventArgs);
             DialogClosingCallback?.Invoke(this, dialogClosingEventArgs);
             _asyncShowClosingEventHandler?.Invoke(this, dialogClosingEventArgs);
-            OnDialogClosing(dialogClosingEventArgs);
 
             if (!dialogClosingEventArgs.IsCancelled)
                 SetCurrentValue(IsOpenProperty, false);
@@ -304,45 +292,15 @@ namespace MaterialDesignThemes.Wpf
             return IsOpen ? OpenStateName : ClosedStateName;
         }
 
-        private void TriggerPopupReposition()
-        {
-            if (_popup == null) return;
-
-            _popup.HorizontalOffset++;
-            _popup.HorizontalOffset--;
-        }
-
         private void OnUnloaded(object sender, RoutedEventArgs routedEventArgs)
         {
             LoadedInstances.Remove(this);
-
-            if (_window != null)
-            {
-                _window.LocationChanged -= WindowOnLocationChanged;
-                _window.SizeChanged -= WindowOnSizeChanged;
-            }
             SetCurrentValue(IsOpenProperty, false);
         }
 
         private void OnLoaded(object sender, RoutedEventArgs routedEventArgs)
         {
             LoadedInstances.Add(this);
-
-            _window = Window.GetWindow(this);
-            if (_window == null) return;
-
-            _window.LocationChanged += WindowOnLocationChanged;
-            _window.SizeChanged += WindowOnSizeChanged;
-        }
-
-        private void WindowOnSizeChanged(object sender, SizeChangedEventArgs sizeChangedEventArgs)
-        {
-            TriggerPopupReposition();
-        }
-
-        private void WindowOnLocationChanged(object sender, EventArgs eventArgs)
-        {
-            TriggerPopupReposition();
         }
     }
 }
